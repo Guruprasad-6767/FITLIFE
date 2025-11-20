@@ -17,7 +17,7 @@ public class StepsTracker extends Tracker implements Savable {
     // removed local day/entryDate; reuse Tracker's date/day
     private int steps;
 
-    private static final String STEPS_FILE = "steps.txt";
+    private static final String STEPS_FILE = "fitlife/logs/steps.txt";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     // Constructor that accepts a specific date
@@ -44,6 +44,8 @@ public class StepsTracker extends Tracker implements Savable {
 
     @Override
     public void saveToFile() throws IOException {
+        File logDir = new File("fitlife/logs");
+        if (!logDir.exists()) logDir.mkdirs();
         FileWriter fw = new FileWriter(STEPS_FILE, true);
         fw.write(getDataAsString() + System.lineSeparator());
         fw.close();
