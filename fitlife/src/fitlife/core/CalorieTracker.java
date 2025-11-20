@@ -19,8 +19,8 @@ public class CalorieTracker extends Tracker implements Savable {
     private int calories;
     private String category;
 
-    private static final String FOODS_FILE = "foods.txt";
-    private static final String MEALS_FILE = "meals.txt";
+    private static final String FOODS_FILE = "fitlife/logs/foods.txt";
+    private static final String MEALS_FILE = "fitlife/logs/meals.txt";
     private static final Map<String, Double> caloriesPerGramMap = new HashMap<>();
 
     // load known foods on class initialization
@@ -51,6 +51,8 @@ public class CalorieTracker extends Tracker implements Savable {
     }
 
     private static void saveFoods() throws IOException {
+        File logDir = new File("fitlife/logs");
+        if (!logDir.exists()) logDir.mkdirs();
         try (PrintWriter pw = new PrintWriter(new FileWriter(FOODS_FILE, false))) {
             for (Map.Entry<String, Double> e : caloriesPerGramMap.entrySet()) {
                 pw.println(e.getKey() + "," + e.getValue());
@@ -136,6 +138,8 @@ public class CalorieTracker extends Tracker implements Savable {
 
     @Override
     public void saveToFile() throws IOException {
+        File logDir = new File("fitlife/logs");
+        if (!logDir.exists()) logDir.mkdirs();
         FileWriter fw = new FileWriter(MEALS_FILE, true);
         fw.write(getDataAsString() + System.lineSeparator());
         fw.close();

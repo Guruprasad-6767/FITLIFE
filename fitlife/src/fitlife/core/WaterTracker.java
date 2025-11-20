@@ -17,7 +17,7 @@ public class WaterTracker extends Tracker implements Savable {
     // changed: store liters (double)
     private double liters;  // in liters
 
-    private static final String WATER_FILE = "water.txt";
+    private static final String WATER_FILE = "fitlife/logs/water.txt";
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ISO_LOCAL_DATE;
 
     // Use today's date
@@ -39,6 +39,8 @@ public class WaterTracker extends Tracker implements Savable {
 
     @Override
     public void saveToFile() throws IOException {
+        File logDir = new File("fitlife/logs");
+        if (!logDir.exists()) logDir.mkdirs();
         try (FileWriter fw = new FileWriter(WATER_FILE, true)) {
             fw.write(getDataAsString() + System.lineSeparator());
         }
@@ -46,6 +48,8 @@ public class WaterTracker extends Tracker implements Savable {
 
     // Log for a specific date (dateIso = "yyyy-MM-dd"), tolerant to old two-column format
     public static void logDaily(String dateIso, double liters) throws IOException {
+        File logDir = new File("fitlife/logs");
+        if (!logDir.exists()) logDir.mkdirs();
         LocalDate d;
         try {
             d = LocalDate.parse(dateIso, DATE_FMT);
