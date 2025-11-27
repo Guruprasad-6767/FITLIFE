@@ -56,7 +56,8 @@ public abstract class Tracker {
         double[] waterPerDay = new double[7]; // liters per day
 
         // meals.txt expected format (new CalorieTracker): date,day,mealName,quantityGrams,calories,category
-        File meals = new File("meals.txt");
+        File logDir = new File("fitlife/logs");
+        File meals = new File(logDir, "meals.txt");
         if (meals.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(meals))) {
                 String line;
@@ -67,22 +68,17 @@ public abstract class Tracker {
                             LocalDate d = LocalDate.parse(p[0].trim(), fmt);
                             int idx = (int) java.time.Duration.between(start.atStartOfDay(), d.atStartOfDay()).toDays();
                             if (idx >= 0 && idx < 7) {
-                                // calories expected at index 4 in the new format
-                                double kcal = Double.parseDouble(p[4].trim());
-                                calPerDay[idx] += kcal;
+                                double cals = Double.parseDouble(p[4].trim());
+                                calPerDay[idx] += cals;
                             }
-                        } catch (Exception e) {
-                            // skip malformed line
-                        }
+                        } catch (Exception ignored) {}
                     }
                 }
-            } catch (Exception e) {
-                // ignore read errors
-            }
+            } catch (Exception ignored) {}
         }
 
         // steps.txt expected format: date,day,steps
-        File steps = new File("steps.txt");
+        File steps = new File(logDir, "steps.txt");
         if (steps.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(steps))) {
                 String line;
@@ -96,18 +92,14 @@ public abstract class Tracker {
                                 int s = Integer.parseInt(p[2].trim());
                                 stepsPerDay[idx] += s;
                             }
-                        } catch (Exception e) {
-                            // skip malformed line
-                        }
+                        } catch (Exception ignored) {}
                     }
                 }
-            } catch (Exception e) {
-                // ignore
-            }
+            } catch (Exception ignored) {}
         }
 
         // water.txt expected format: date,day,liters  (tolerant parsing)
-        File water = new File("water.txt");
+        File water = new File(logDir, "water.txt");
         if (water.exists()) {
             try (BufferedReader br = new BufferedReader(new FileReader(water))) {
                 String line;
@@ -121,14 +113,10 @@ public abstract class Tracker {
                                 double liters = Double.parseDouble(p[2].trim());
                                 waterPerDay[idx] += liters;
                             }
-                        } catch (Exception e) {
-                            // skip malformed line
-                        }
+                        } catch (Exception ignored) {}
                     }
                 }
-            } catch (Exception e) {
-                // ignore
-            }
+            } catch (Exception ignored) {}
         }
 
         StringBuilder sb = new StringBuilder();
