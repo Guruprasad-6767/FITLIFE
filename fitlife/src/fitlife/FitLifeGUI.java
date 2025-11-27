@@ -8,7 +8,6 @@ import fitlife.logic.BMITracker;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
 import java.time.LocalDate;
 
 public class FitLifeGUI extends JFrame {

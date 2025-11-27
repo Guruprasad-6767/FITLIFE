@@ -1,6 +1,5 @@
 package fitlife;
 
-import fitlife.FitLifeGUI;
 
 public class Main {
     public static void main(String[] args) {
