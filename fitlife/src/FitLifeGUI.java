@@ -9,54 +9,279 @@ import fitlife.ai.GeminiAnalyzer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class FitLifeGUI extends JFrame {
+    private JPanel dashboardPanel;
+    private JScrollPane dashboardScroll;
 
     public FitLifeGUI() {
         setTitle("FitLife - AI-Powered Health Tracker");
-        setSize(400, 500);
+        setSize(900, 700);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(true);
 
-        JPanel panel = new JPanel(new GridLayout(8, 1, 10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        // Main container with BorderLayout
+        JPanel mainPanel = new JPanel(new BorderLayout(0, 0));
+        mainPanel.setBackground(new Color(245, 245, 250));
 
-        JButton mealBtn = new JButton("📝 Log Meal");
-        JButton stepsBtn = new JButton("👟 Log Steps");
-        JButton waterBtn = new JButton("💧 Log Water");
-        JButton bmiBtn = new JButton("⚖️ BMI Calculator");
-        JButton weeklyBtn = new JButton("📊 Weekly Summary");
-        JButton aiBtn = new JButton("🤖 AI Health Analysis");
-        JButton exitBtn = new JButton("❌ Exit");
+        // Top header
+        JPanel headerPanel = createHeaderPanel();
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // Styling
-        Font btnFont = new Font("Arial", Font.BOLD, 12);
-        for (JButton btn : new JButton[]{mealBtn, stepsBtn, waterBtn, bmiBtn, weeklyBtn, aiBtn, exitBtn}) {
-            btn.setFont(btnFont);
-            btn.setFocusPainted(false);
-            btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        }
+        // Middle content - Dashboard and Buttons side by side
+        JPanel contentPanel = new JPanel(new BorderLayout(15, 0));
+        contentPanel.setBackground(new Color(245, 245, 250));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        mealBtn.addActionListener(e -> logMeal());
-        stepsBtn.addActionListener(e -> logSteps());
-        waterBtn.addActionListener(e -> logWater());
+        // Left side - Dashboard
+        dashboardPanel = createDashboardPanel();
+        dashboardScroll = new JScrollPane(dashboardPanel);
+        dashboardScroll.setPreferredSize(new Dimension(400, 600));
+        contentPanel.add(dashboardScroll, BorderLayout.CENTER);
+
+        // Right side - Buttons
+        JPanel buttonPanel = createButtonPanel();
+        contentPanel.add(buttonPanel, BorderLayout.EAST);
+
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
+        add(mainPanel);
+    }
+
+    private JPanel createHeaderPanel() {
+        JPanel header = new JPanel();
+        header.setBackground(new Color(41, 128, 185)); // Modern blue
+        header.setPreferredSize(new Dimension(900, 80));
+        header.setLayout(new BorderLayout());
+        header.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        JLabel titleLabel = new JLabel("🏥 FitLife - Your AI Health Companion");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(Color.WHITE);
+
+        JLabel subtitleLabel = new JLabel("Track your health, get AI insights");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitleLabel.setForeground(new Color(220, 240, 255));
+
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1, 0, 3));
+        titlePanel.setBackground(new Color(41, 128, 185));
+        titlePanel.add(titleLabel);
+        titlePanel.add(subtitleLabel);
+
+        header.add(titlePanel, BorderLayout.WEST);
+        return header;
+    }
+
+    private JPanel createDashboardPanel() {
+        JPanel dashboard = new JPanel();
+        dashboard.setLayout(new BoxLayout(dashboard, BoxLayout.Y_AXIS));
+        dashboard.setBackground(Color.WHITE);
+        dashboard.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Today's Date
+        JLabel dateLabel = new JLabel("📅 " + LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy")));
+        dateLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        dateLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        dashboard.add(dateLabel);
+        dashboard.add(Box.createVerticalStrut(15));
+
+        // Meals Today
+        dashboard.add(createDashboardCard("🍽️ Meals Today", getTodaysMeals()));
+        dashboard.add(Box.createVerticalStrut(10));
+
+        // Steps Today
+        dashboard.add(createDashboardCard("👟 Steps Today", getTodaysSteps()));
+        dashboard.add(Box.createVerticalStrut(10));
+
+        // Water Today
+        dashboard.add(createDashboardCard("💧 Water Today", getTodaysWater()));
+        dashboard.add(Box.createVerticalStrut(10));
+
+        // Recent Activity
+        dashboard.add(createDashboardCard("📊 Recent Activity", getRecentActivity()));
+
+        dashboard.add(Box.createVerticalGlue());
+
+        return dashboard;
+    }
+
+    private JPanel createDashboardCard(String title, String content) {
+        JPanel card = new JPanel();
+        card.setLayout(new BorderLayout(10, 10));
+        card.setBackground(new Color(255, 255, 255));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 220, 230), 1),
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)
+        ));
+        card.setMaximumSize(new Dimension(350, 120));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        titleLabel.setForeground(new Color(41, 128, 185));
+
+        JTextArea contentArea = new JTextArea(content);
+        contentArea.setEditable(false);
+        contentArea.setLineWrap(true);
+        contentArea.setWrapStyleWord(true);
+        contentArea.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        contentArea.setBackground(new Color(250, 250, 255));
+        contentArea.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        contentArea.setForeground(new Color(50, 50, 50));
+
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(new JScrollPane(contentArea), BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JPanel createButtonPanel() {
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setLayout(new GridLayout(7, 1, 0, 10));
+        buttonPanel.setBackground(new Color(245, 245, 250));
+        buttonPanel.setPreferredSize(new Dimension(200, 0));
+
+        Color btnColor = new Color(41, 128, 185);
+        Color hoverColor = new Color(30, 100, 160);
+
+        JButton mealBtn = createStyledButton("📝 Log Meal", btnColor, hoverColor);
+        JButton stepsBtn = createStyledButton("👟 Log Steps", btnColor, hoverColor);
+        JButton waterBtn = createStyledButton("💧 Log Water", btnColor, hoverColor);
+        JButton bmiBtn = createStyledButton("⚖️ BMI Calculator", btnColor, hoverColor);
+        JButton weeklyBtn = createStyledButton("📊 Weekly Summary", btnColor, hoverColor);
+        JButton aiBtn = createStyledButton("🤖 AI Analysis", btnColor, hoverColor);
+        JButton exitBtn = createStyledButton("❌ Exit", new Color(231, 76, 60), new Color(192, 57, 43));
+
+        mealBtn.addActionListener(e -> { logMeal(); refreshDashboard(); });
+        stepsBtn.addActionListener(e -> { logSteps(); refreshDashboard(); });
+        waterBtn.addActionListener(e -> { logWater(); refreshDashboard(); });
         bmiBtn.addActionListener(e -> runBMI());
         weeklyBtn.addActionListener(e -> showWeeklySummary());
         aiBtn.addActionListener(e -> analyzeWithAI());
         exitBtn.addActionListener(e -> System.exit(0));
 
-        panel.add(mealBtn);
-        panel.add(stepsBtn);
-        panel.add(waterBtn);
-        panel.add(bmiBtn);
-        panel.add(weeklyBtn);
-        panel.add(aiBtn);
-        panel.add(exitBtn);
+        buttonPanel.add(mealBtn);
+        buttonPanel.add(stepsBtn);
+        buttonPanel.add(waterBtn);
+        buttonPanel.add(bmiBtn);
+        buttonPanel.add(weeklyBtn);
+        buttonPanel.add(aiBtn);
+        buttonPanel.add(exitBtn);
 
-        add(panel);
+        return buttonPanel;
+    }
+
+    private JButton createStyledButton(String text, Color bgColor, Color hoverColor) {
+        JButton btn = new JButton(text);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btn.setBackground(bgColor);
+        btn.setForeground(Color.WHITE);
+        btn.setBorder(BorderFactory.createEmptyBorder(12, 10, 12, 10));
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setOpaque(true);
+
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btn.setBackground(hoverColor);
+            }
+
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(bgColor);
+            }
+        });
+
+        return btn;
+    }
+
+    private void refreshDashboard() {
+        // Recreate the dashboard panel
+        dashboardPanel = createDashboardPanel();
+        // Update the scroll pane's viewport with the new panel
+        dashboardScroll.setViewportView(dashboardPanel);
+        // Repaint the scroll pane
+        dashboardScroll.repaint();
+    }
+
+    private String getTodaysMeals() {
+        try {
+            String today = LocalDate.now().toString();
+            List<String> meals = Files.readAllLines(Paths.get("meals.txt"));
+            List<String> todaysMeals = meals.stream()
+                    .filter(line -> line.contains(today))
+                    .collect(Collectors.toList());
+
+            if (todaysMeals.isEmpty()) {
+                return "No meals logged yet.\n\nTip: Log a meal to start tracking!";
+            }
+            return String.join("\n", todaysMeals.stream().limit(5).collect(Collectors.toList()));
+        } catch (Exception e) {
+            return "No data available";
+        }
+    }
+
+    private String getTodaysSteps() {
+        try {
+            String today = LocalDate.now().toString();
+            List<String> steps = Files.readAllLines(Paths.get("steps.txt"));
+            List<String> todaysSteps = steps.stream()
+                    .filter(line -> line.contains(today))
+                    .collect(Collectors.toList());
+
+            if (todaysSteps.isEmpty()) {
+                return "No steps logged yet.\n\nDaily goal: 10,000 steps";
+            }
+            return String.join("\n", todaysSteps);
+        } catch (Exception e) {
+            return "No data available";
+        }
+    }
+
+    private String getTodaysWater() {
+        try {
+            String today = LocalDate.now().toString();
+            List<String> water = Files.readAllLines(Paths.get("water.txt"));
+            List<String> todaysWater = water.stream()
+                    .filter(line -> line.contains(today))
+                    .collect(Collectors.toList());
+
+            if (todaysWater.isEmpty()) {
+                return "No water logged yet.\n\nDaily goal: 2-3 liters";
+            }
+            return String.join("\n", todaysWater);
+        } catch (Exception e) {
+            return "No data available";
+        }
+    }
+
+    private String getRecentActivity() {
+        StringBuilder activity = new StringBuilder();
+        try {
+            // Last 3 meals
+            List<String> meals = Files.readAllLines(Paths.get("meals.txt"));
+            activity.append("Recent meals:\n");
+            meals.stream().skip(Math.max(0, meals.size() - 2)).forEach(m -> activity.append("  • ").append(m).append("\n"));
+
+            // Last 3 steps entries
+            List<String> steps = Files.readAllLines(Paths.get("steps.txt"));
+            activity.append("\nRecent steps:\n");
+            steps.stream().skip(Math.max(0, steps.size() - 2)).forEach(s -> activity.append("  • ").append(s).append("\n"));
+
+            return activity.toString();
+        } catch (Exception e) {
+            return "No recent activity";
+        }
     }
 
     private void logMeal() {
